@@ -8,15 +8,24 @@ load_config = partial(dotenv_values, ".env")
 
 def main():
     config = load_config()
-    url = config.get("API_ENDPOINT")
-    params = {
+
+    alphavantage_url = config.get("ALPHAVANTAGE_API_ENDPOINT")
+    alphavantage_params = {
         # TODO: make the function value dynamic
         "function": "TIME_SERIES_DAILY",
         "symbol": config.get("STOCK"),
-        "apikey": config.get("API_KEY")
+        "apikey": config.get("ALPHAVANTAGE_API_KEY")
     }
 
-    data = requests.get(url, params=params).json()
+    news_api_url = config.get("NEWS_API_ENDPOINT")
+    news_api_params = {
+        "apiKey": config.get("NEWS_API_KEY"),
+        # TODO: names like "Tesla Inc." are not working" - search for a better solution
+        "q": config.get("COMPANY_NAME")
+    }
+
+
+    data = requests.get(alphavantage_url, params=alphavantage_params).json()
 
     # Extract the daily time series
     time_series = data["Time Series (Daily)"]
@@ -34,6 +43,9 @@ def main():
 
     # TODO: replace magic number with a variable
     if percentage_change > 5:
+        get_news = requests.get(news_api_url, params=news_api_params).json()
+        # TODO: get the first 3 articles
+        print(get_news)
         print("Get News")
     else:
         print("Nothing")
