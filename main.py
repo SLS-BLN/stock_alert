@@ -5,48 +5,63 @@ from functools import partial
 
 load_config = partial(dotenv_values, ".env")
 
+def get_stock_data(url, params):
+    try:
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        return response.json()
+    except requests.RequestException as e:
+        print(f"Error fetching data: {e}")
+        return None
+
+def calculate_percentage_change(latest_close: float, previous_close: float) -> float:
+    return abs((latest_close - previous_close) / previous_close * 100)
+
+def is_percentage_threshold_reached(percentage_change: float, threshold: float) -> bool:
+    return percentage_change > threshold
+
+def extract_latest_prices(data: dict) -> tuple[float, float]:
+    time_series = data["Time Series (Daily)"]
+    dates = sorted(time_series.keys(), reverse=True)
+    latest_close = float(time_series[dates[0]]["4. close"])
+    previous_close = float(time_series[dates[1]]["4. close"])
+    return latest_close, previous_close
+
+def get_news(url, params):
+    try:
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        news_data = response.json()
+        return news_data.get("articles", [])[:3]
+    except requests.RequestException as e:
+        print(f"Error fetching news: {e}")
+        return []
 
 def main():
     config = load_config()
 
-    alphavantage_url = config.get("ALPHAVANTAGE_API_ENDPOINT")
-    alphavantage_params = {
-        # TODO: make the function value dynamic
-        "function": "TIME_SERIES_DAILY",
-        "symbol": config.get("STOCK"),
-        "apikey": config.get("ALPHAVANTAGE_API_KEY")
-    }
+    stock_data = get_stock_data(
+        config["ALPHAVANTAGE_API_ENDPOINT"],
+        {
+            "function": "TIME_SERIES_DAILY",
+            "symbol": config["STOCK"],
+            "apikey": config["ALPHAVANTAGE_API_KEY"]
+        }
+    )
 
-    news_api_url = config.get("NEWS_API_ENDPOINT")
-    news_api_params = {
-        "apiKey": config.get("NEWS_API_KEY"),
-        # TODO: names like "Tesla Inc." are not working" - search for a better solution
-        "q": config.get("COMPANY_NAME")
-    }
+    if not stock_data:
+        return
 
+    latest, previous = extract_latest_prices(stock_data)
+    pct_change = calculate_percentage_change(latest, previous)
 
-    data = requests.get(alphavantage_url, params=alphavantage_params).json()
-
-    # Extract the daily time series
-    time_series = data["Time Series (Daily)"]
-
-    # Get all available dates sorted (the most recent first)
-    dates = list(time_series.keys())
-
-    latest_day = dates[0]
-    previous_day = dates[1]  # The day before the latest trading day
-
-    latest_close = float(time_series[latest_day]["4. close"])
-    previous_close = float(time_series[previous_day]["4. close"])
-
-    percentage_change = abs((latest_close - previous_close) / previous_close * 100)
-
-    # TODO: replace magic number with a variable
-    if percentage_change > 5:
-        get_news = requests.get(news_api_url, params=news_api_params).json()
-        # TODO: get the first 3 articles
-        print(get_news)
-        print("Get News")
+    if is_percentage_threshold_reached(pct_change, float(config["THRESHOLD"])):
+        articles = get_news(
+            config["NEWS_API_ENDPOINT"],
+            {"apiKey": config["NEWS_API_KEY"], "q": config["COMPANY_NAME"]}
+        )
+        for article in articles:
+            print(article["title"], article["url"])
     else:
         print("Nothing")
 
