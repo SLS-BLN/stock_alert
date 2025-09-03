@@ -15,10 +15,21 @@ def get_stock_data(url, params):
         return None
 
 def calculate_percentage_change(latest_close: float, previous_close: float) -> float:
-    return abs((latest_close - previous_close) / previous_close * 100)
+    """
+    Returns the signed percentage change from previous_close to latest_close.
+    Positive means price went up, negative means price went down.
+    """
+    if previous_close == 0:
+        raise ValueError("Previous close cannot be zero.")
+    return (latest_close - previous_close) / previous_close * 100
+
 
 def is_percentage_threshold_reached(percentage_change: float, threshold: float) -> bool:
-    return percentage_change > threshold
+    """
+    Returns True if the absolute percentage change exceeds the threshold.
+    Works for both positive (up) and negative (down) changes.
+    """
+    return abs(percentage_change) > threshold
 
 def extract_latest_prices(data: dict) -> tuple[float, float]:
     time_series = data["Time Series (Daily)"]
