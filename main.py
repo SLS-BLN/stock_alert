@@ -1,5 +1,6 @@
 import requests
 
+from twilio.rest import Client
 from dotenv import dotenv_values
 from functools import partial
 
@@ -9,7 +10,21 @@ def get_stock_data(url, params):
     try:
         response = requests.get(url, params=params)
         response.raise_for_status()
-        return response.json()
+        data = response.json()
+
+        # Alpha Vantage sometimes returns "Error Message" or "Note" instead of data
+        if "Error Message" in data:
+            print(f"Alpha Vantage error: {data['Error Message']}")
+            return None
+        if "Note" in data:
+            print(f"Alpha Vantage notice: {data['Note']}")
+            return None
+        if "Time Series (Daily)" not in data:
+            print(f"Unexpected API response: {data}")
+            return None
+
+        return data
+
     except requests.RequestException as e:
         print(f"Error fetching data: {e}")
         return None
@@ -17,7 +32,7 @@ def get_stock_data(url, params):
 def calculate_percentage_change(latest_close: float, previous_close: float) -> float:
     """
     Returns the signed percentage change from previous_close to latest_close.
-    Positive means price went up, negative means price went down.
+    "Positive" means the price went up, "negative" means the price went down.
     """
     if previous_close == 0:
         raise ValueError("Previous close cannot be zero.")
@@ -48,8 +63,38 @@ def get_news(url, params):
         print(f"Error fetching news: {e}")
         return []
 
+# TODO: Make SMS body customizable via config or template system.
+def build_sms(config, messages):
+    """
+    Build a single SMS payload from a list of [title, url] pairs.
+    Joins multiple articles into one message body.
+    """
+    if not messages:
+        return None
+
+    # Combine each article's title and URL into a string
+    article_lines = [f"{title} - {url}" for title, url in messages]
+
+    # Join them with newlines so they appear nicely in the SMS
+    body_text = "\n".join(article_lines)
+
+    return {
+        "body": body_text,
+        "from_": config["TWILIO_PHONE_NUMBER"],
+        "to": config["MY_PHONE_NUMBER"]
+    }
+
+# TODO: Separate Twilio client creation from message sending for better testability.
+def send_sms(account_sid, auth_token, sms_data):
+    client = Client(account_sid, auth_token)
+    return client.messages.create(**sms_data)
+
+
 def main():
     config = load_config()
+
+    account_sid = config["TWILIO_ACCOUNT_SID"]
+    auth_token = config["TWILIO_AUTH_TOKEN"]
 
     stock_data = get_stock_data(
         config["ALPHAVANTAGE_API_ENDPOINT"],
@@ -67,12 +112,19 @@ def main():
     pct_change = calculate_percentage_change(latest, previous)
 
     if is_percentage_threshold_reached(pct_change, float(config["THRESHOLD"])):
+        messages = []
         articles = get_news(
             config["NEWS_API_ENDPOINT"],
             {"apiKey": config["NEWS_API_KEY"], "q": config["COMPANY_NAME"]}
         )
         for article in articles:
-            print(article["title"], article["url"])
+            messages.append([article["title"], article["url"]])
+
+        sms_data = build_sms(config, messages)
+        message = send_sms(account_sid, auth_token, sms_data)
+        print(f"Message sent: {message.sid}")
+
+
     else:
         print("Nothing")
 
