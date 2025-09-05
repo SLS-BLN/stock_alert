@@ -63,20 +63,47 @@ def get_news(url, params):
         print(f"Error fetching news: {e}")
         return []
 
+def shorten_url(url):
+    try:
+        response = requests.get(f"https://tinyurl.com/api-create.php?url={url}")
+        response.raise_for_status()
+        return response.text
+    except requests.RequestException as e:
+        print(f"Error shortening URL: {e}")
+        return url  # fallback to original
+
 # TODO: Make SMS body customizable via config or template system.
 def build_sms(config, messages):
     """
-    Build a single SMS payload from a list of [title, url] pairs.
-    Joins multiple articles into one message body.
+    Build SMS payload. If in trial mode, send only the first article with shortened URL.
+    Otherwise, include all articles, each with a shortened URL.
     """
     if not messages:
         return None
 
-    # Combine each article's title and URL into a string
-    article_lines = [f"{title} - {url}" for title, url in messages]
+    trial_mode = config.get("TWILIO_TRIAL_MODE", "false").lower() == "true"
 
-    # Join them with newlines so they appear nicely in the SMS
-    body_text = "\n".join(article_lines)
+    if trial_mode:
+        # Use only the first article and shorten its URL
+        title, url = messages[0]
+        short_url = shorten_url(url)
+
+        # Truncate title to fit within 160-character SMS limit
+        max_title_length = 100
+        if len(title) > max_title_length:
+            title = title[:max_title_length - 3] + "..."
+
+        body_text = f"{title} {short_url}"
+
+    else:
+        # Include all articles with shortened URLs
+        article_lines = []
+        for title, url in messages:
+            short_url = shorten_url(url)
+            article_lines.append(f"{title} {short_url}")
+        body_text = "\n".join(article_lines)
+
+    print(f"SMS length: {len(body_text)} characters")
 
     return {
         "body": body_text,
