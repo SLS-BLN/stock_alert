@@ -73,35 +73,40 @@ def shorten_url(url):
         return url  # fallback to original
 
 # TODO: Make SMS body customizable via config or template system.
-def build_sms(config, messages):
+def build_sms(config, messages, pct_change):
     """
-    Build SMS payload. If in trial mode, send only the first article with shortened URL.
-    Otherwise, include all articles, each with a shortened URL.
+    Build SMS payload with colored triangle and percentage change.
+    Uses only the first article in trial mode.
     """
     if not messages:
         return None
 
     trial_mode = config.get("TWILIO_TRIAL_MODE", "false").lower() == "true"
 
+    # Choose emoji based on price movement
+    if pct_change > 0:
+        indicator = "🟢▲"
+    else:
+        indicator = "🔴▼"
+
+    pct_text = f"{indicator} {pct_change:.2f}%"
+
     if trial_mode:
-        # Use only the first article and shorten its URL
         title, url = messages[0]
         short_url = shorten_url(url)
 
-        # Truncate title to fit within 160-character SMS limit
         max_title_length = 100
         if len(title) > max_title_length:
             title = title[:max_title_length - 3] + "..."
 
-        body_text = f"{title} {short_url}"
+        body_text = f"{pct_text}\n{title} {short_url}"
 
     else:
-        # Include all articles with shortened URLs
         article_lines = []
         for title, url in messages:
             short_url = shorten_url(url)
             article_lines.append(f"{title} {short_url}")
-        body_text = "\n".join(article_lines)
+        body_text = f"{pct_text}\n" + "\n".join(article_lines)
 
     print(f"SMS length: {len(body_text)} characters")
 
@@ -147,9 +152,21 @@ def main():
         for article in articles:
             messages.append([article["title"], article["url"]])
 
-        sms_data = build_sms(config, messages)
+        sms_data = build_sms(config, messages, pct_change)
+        if not sms_data:
+            return
         message = send_sms(account_sid, auth_token, sms_data)
-        print(f"Message sent: {message.sid}")
+
+        # Check status and provide meaningful feedback
+        status = message.status
+        if status in ["sent", "queued", "delivered"]:
+            print(f"✅ SMS successfully {status}: {message.sid}")
+        else:
+            print(f"❌ SMS failed with status '{status}'")
+            if message.error_code:
+                print(f"Twilio error code: {message.error_code}")
+            if message.error_message:
+                print(f"Twilio error message: {message.error_message}")
 
 
     else:
