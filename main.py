@@ -1,30 +1,73 @@
+import sys
+from typing import Dict, Any
+
 from config import load_config
 from data_fetch import fetch_stock_data, fetch_news_articles
 from utils import evaluate_stock_change
 from sms import prepare_sms, send_sms
 
 # TODO: Add CLI or GUI interface for user interaction
-# TODO: Implement logging instead of print statements for better traceability
+# TODO: Consider adding back logging when needed for production use
 
-def run_alert_pipeline(config: dict) -> None:
-    stock_data = fetch_stock_data(config)
+def run_alert_pipeline(config: Dict[str, Any]) -> None:
+    """Run the stock alert pipeline.
+    
+    Args:
+        config: Application configuration
+    """
+    # Fetch stock data
+    stock_data = fetch_stock_data(
+        config["ALPHAVANTAGE_API_ENDPOINT"],
+        config["ALPHAVANTAGE_API_KEY"],
+        config["STOCK"]
+    )
+    
     if not stock_data:
-        print("No stock data available.")
+        print("❌ No stock data available.")
         return
-
-    alert_needed, pct_change = evaluate_stock_change(config, stock_data)
+    
+    # Check if price change exceeds threshold
+    threshold = config["THRESHOLD"]
+    alert_needed, pct_change = evaluate_stock_change(stock_data, threshold)
+    
     if not alert_needed:
-        print("Threshold not reached.")
+        print(f"ℹ️  Threshold not reached: {abs(pct_change):.2f}% (threshold: {threshold}%)")
         return
-
-    messages = fetch_news_articles(config)
+    
+    print(f"📈 Significant price movement detected: {pct_change:+.2f}%")
+    
+    # Fetch news articles
+    messages = fetch_news_articles(
+        config["NEWS_API_ENDPOINT"],
+        config["NEWS_API_KEY"],
+        config["COMPANY_NAME"]
+    )
+    
+    if not messages:
+        print("ℹ️  No news articles found.")
+        return
+    
+    # Prepare and send SMS
     sms_data = prepare_sms(config, messages, pct_change)
-    if sms_data:
-        send_sms(config["TWILIO_ACCOUNT_SID"], config["TWILIO_AUTH_TOKEN"], sms_data)
+    if sms_data and send_sms(config["TWILIO_ACCOUNT_SID"], config["TWILIO_AUTH_TOKEN"], sms_data):
+        print("✅ SMS alert sent successfully!")
+    else:
+        print("❌ Failed to send SMS alert.")
 
-def main():
-    config = load_config()
-    run_alert_pipeline(config)
+def main() -> None:
+    """Main entry point for the stock alert application."""
+    try:
+        config = load_config()
+        run_alert_pipeline(config)
+    except FileNotFoundError as e:
+        print(f"❌ Error: {e}")
+        sys.exit(1)
+    except ValueError as e:
+        print(f"❌ Configuration error: {e}")
+        sys.exit(1)
+    except Exception as e:
+        print(f"❌ An unexpected error occurred: {e}")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()

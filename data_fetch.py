@@ -1,50 +1,80 @@
 import requests
+from typing import Dict, List, Tuple, Optional
 
-# TODO: Add error handling for failed API requests (e.g., retries, timeouts)
-# TODO: Cache responses to reduce redundant API calls
-
-def get_stock_data(url: str, params: dict) -> dict | None:
+def fetch_stock_data(api_endpoint: str, api_key: str, symbol: str) -> Optional[Dict]:
+    """Fetch stock data from Alpha Vantage API.
+    
+    Args:
+        api_endpoint: Alpha Vantage API endpoint
+        api_key: Alpha Vantage API key
+        symbol: Stock symbol to fetch data for
+        
+    Returns:
+        Stock data if successful, None otherwise
+    """
+    params = {
+        "function": "TIME_SERIES_DAILY",
+        "symbol": symbol,
+        "apikey": api_key,
+        "outputsize": "compact"
+    }
+    
     try:
-        response = requests.get(url, params=params)
+        response = requests.get(api_endpoint, params=params, timeout=10)
         response.raise_for_status()
         data = response.json()
-        if "Error Message" in data or "Note" in data or "Time Series (Daily)" not in data:
+        
+        # Check for API errors
+        if "Error Message" in data or "Note" in data:
             return None
+            
+        if "Time Series (Daily)" not in data:
+            return None
+            
         return data
-    except requests.RequestException:
+    except:
         return None
 
-def fetch_stock_data(config: dict) -> dict | None:
-    return get_stock_data(
-        config["ALPHAVANTAGE_API_ENDPOINT"],
-        {
-            "function": "TIME_SERIES_DAILY",
-            "symbol": config["STOCK"],
-            "apikey": config["ALPHAVANTAGE_API_KEY"]
-        }
-    )
-
-# NOTE: This function is currently specific to Alpha Vantage's response format.
-# If support for multiple stock APIs is added in the future, consider moving this
-# to utils.py and generalizing it as a reusable price parser.
-def extract_latest_prices(data: dict) -> tuple[float, float]:
-    time_series = data["Time Series (Daily)"]
-    dates = sorted(time_series.keys(), reverse=True)
-    latest = float(time_series[dates[0]]["4. close"])
-    previous = float(time_series[dates[1]]["4. close"])
+def extract_latest_prices(stock_data: Dict) -> Tuple[float, float]:
+    """Extract latest and previous day's closing prices.
+    
+    Args:
+        stock_data: Stock data from Alpha Vantage API
+        
+    Returns:
+        Tuple of (latest_price, previous_price)
+    """
+    time_series = stock_data["Time Series (Daily)"]
+    sorted_dates = sorted(time_series.keys(), reverse=True)
+    
+    latest = float(time_series[sorted_dates[0]]["4. close"])
+    previous = float(time_series[sorted_dates[1]]["4. close"])
+    
     return latest, previous
 
-def get_news(url: str, params: dict) -> list[tuple[str, str]]:
+def fetch_news_articles(api_endpoint: str, api_key: str, company_name: str) -> List[Tuple[str, str]]:
+    """Fetch news articles related to the company.
+    
+    Args:
+        api_endpoint: News API endpoint
+        api_key: News API key
+        company_name: Company name to search for
+        
+    Returns:
+        List of (title, url) tuples
+    """
+    params = {
+        "apiKey": api_key,
+        "q": company_name,
+        "pageSize": 3,
+        "language": "en"
+    }
+    
     try:
-        response = requests.get(url, params=params)
+        response = requests.get(api_endpoint, params=params, timeout=10)
         response.raise_for_status()
-        articles = response.json().get("articles", [])[:3]
-        return [(a["title"], a["url"]) for a in articles]
-    except requests.RequestException:
+        
+        articles = response.json().get("articles", [])
+        return [(a["title"], a["url"]) for a in articles if a.get("title") and a.get("url")]
+    except:
         return []
-
-def fetch_news_articles(config: dict) -> list[tuple[str, str]]:
-    return get_news(
-        config["NEWS_API_ENDPOINT"],
-        {"apiKey": config["NEWS_API_KEY"], "q": config["COMPANY_NAME"]}
-    )
