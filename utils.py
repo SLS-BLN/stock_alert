@@ -1,6 +1,8 @@
 import requests
 from data_fetch import extract_latest_prices
 
+# TODO: Move reusable formatting or validation functions here
+# TODO: Add docstrings to clarify utility function purposes
 def calculate_percentage_change(latest: float, previous: float) -> float:
     if previous == 0:
         raise ValueError("Previous close cannot be zero.")
@@ -9,7 +11,6 @@ def calculate_percentage_change(latest: float, previous: float) -> float:
 def is_threshold_reached(change: float, threshold: float) -> bool:
     return abs(change) > threshold
 
-# TODO: error
 def evaluate_stock_change(config: dict, stock_data: dict) -> tuple[bool, float]:
     latest, previous = extract_latest_prices(stock_data)
     pct_change = calculate_percentage_change(latest, previous)

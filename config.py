@@ -1,5 +1,6 @@
 from dotenv import dotenv_values
 
+# TODO: Validate environment variables and handle missing keys gracefully
 def load_config(path: str = ".env") -> dict:
     config = dotenv_values(path)
     required_keys = [

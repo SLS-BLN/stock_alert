@@ -3,6 +3,9 @@ from data_fetch import fetch_stock_data, fetch_news_articles
 from utils import evaluate_stock_change
 from sms import prepare_sms, send_sms
 
+# TODO: Add CLI or GUI interface for user interaction
+# TODO: Implement logging instead of print statements for better traceability
+
 def run_alert_pipeline(config: dict) -> None:
     stock_data = fetch_stock_data(config)
     if not stock_data:

@@ -1,5 +1,8 @@
 import requests
 
+# TODO: Add error handling for failed API requests (e.g., retries, timeouts)
+# TODO: Cache responses to reduce redundant API calls
+
 def get_stock_data(url: str, params: dict) -> dict | None:
     try:
         response = requests.get(url, params=params)

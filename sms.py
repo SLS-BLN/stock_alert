@@ -1,6 +1,8 @@
 from twilio.rest import Client
 from utils import shorten_url, format_sms_message
 
+# TODO: Abstract SMS provider to allow switching between Twilio, Nexmo, etc.
+# TODO: Add unit tests for SMS sending logic
 
 def prepare_sms(config: dict, messages: list[tuple[str, str]], pct_change: float) -> dict | None:
     return build_sms(config, messages, pct_change)
