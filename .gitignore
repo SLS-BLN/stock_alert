@@ -18,6 +18,9 @@ venv.bak/
 Thumbs.db
 desktop.ini
 
+# ─── Business Documents ──────────────────────────
+business_docs/
+
 # ─── Build & Packaging ───────────────────────────
 build/
 dist/
