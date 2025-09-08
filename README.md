@@ -2,6 +2,23 @@
 
 A Python application that monitors stock price changes and sends SMS alerts when thresholds are exceeded. This project was initially developed as part of a learning exercise and later refactored for better code quality and maintainability.
 
+### ⚠️ Twilio SMS Delivery Limitation (Development Mode)
+
+**Note:** SMS messages may fail to send when using a Twilio **Trial account** due to strict character limits.
+
+- Trial accounts allow only **1 SMS segment** per message.
+- Messages with **Unicode symbols** (e.g., 📈, 🟢, ▲) are encoded differently, reducing the limit to **70 characters**.
+- Even without emojis, longer headlines or verbose content can exceed the **160-character GSM limit**.
+
+This behavior is **intentional during development** to preserve formatting and test full message structure. In production, with a paid Twilio account, these limits are relaxed and multi-segment messages are supported.
+
+To debug delivery issues, check the Twilio **Error Logs**:
+> **Twilio Console → Account Dashboard → Monitor → Errors → Error Logs**  
+> Look for error code: **30044 – Trial Message Length Exceeded**
+
+You can also shorten messages or remove emojis to stay within trial limits if needed.
+
+
 ## 📜 Development History
 
 - **Initial Development**: The core functionality was developed independently as part of a coding exercise.
