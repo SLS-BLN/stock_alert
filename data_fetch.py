@@ -52,7 +52,12 @@ def extract_latest_prices(stock_data: Dict) -> Tuple[float, float]:
     
     return latest, previous
 
-def fetch_news_articles(api_endpoint: str, api_key: str, company_name: str) -> List[Tuple[str, str]]:
+
+DEFAULT_PAGE_SIZE = 3  # TODO: Make configurable via .env or external config file
+
+# TODO: Refactor API config parameters into a dataclass (e.g., NewsAPIConfig)
+#       to improve readability, reduce parameter count, and support cleaner config management.
+def fetch_news_articles(api_endpoint: str, api_key: str, company_name: str, page_size: int = DEFAULT_PAGE_SIZE) -> List[Tuple[str, str]]:
     """Fetch news articles related to the company.
     
     Args:
@@ -67,7 +72,7 @@ def fetch_news_articles(api_endpoint: str, api_key: str, company_name: str) -> L
         "apiKey": api_key,
         "q": company_name,
         "searchIn": "title",
-        "pageSize": 3,
+        "pageSize": page_size,
         "language": "en"
     }
     

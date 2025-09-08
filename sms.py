@@ -17,6 +17,7 @@ def prepare_sms(
     Returns:
         Dictionary with 'to', 'from_', and 'body' keys if successful, None otherwise
     """
+
     if not messages:
         return None
     
