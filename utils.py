@@ -1,3 +1,4 @@
+import requests
 from typing import Tuple
 
 def calculate_percentage_change(latest: float, previous: float) -> float:
@@ -39,6 +40,8 @@ def evaluate_stock_change(stock_data: dict, threshold: float) -> Tuple[bool, flo
     Returns:
         Tuple of (threshold_reached, percentage_change)
     """
+
+    # TODO: duplicated logic with data_fetch.py
     time_series = stock_data["Time Series (Daily)"]
     sorted_dates = sorted(time_series.keys(), reverse=True)
     

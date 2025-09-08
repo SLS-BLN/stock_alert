@@ -66,6 +66,7 @@ def fetch_news_articles(api_endpoint: str, api_key: str, company_name: str) -> L
     params = {
         "apiKey": api_key,
         "q": company_name,
+        "searchIn": "title",
         "pageSize": 3,
         "language": "en"
     }
