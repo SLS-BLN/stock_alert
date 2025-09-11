@@ -4,7 +4,7 @@ from utils import shorten_url, format_sms_message
 
 def prepare_sms(
     config: Dict[str, any],
-    messages: List[Tuple[str, str]],
+    messages: List[Tuple[str, str, str]],
     pct_change: float
 ) -> Optional[Dict[str, str]]:
     """Prepare SMS message content.
@@ -20,19 +20,25 @@ def prepare_sms(
 
     if not messages:
         return None
-    
+
     # In trial mode, only send the first message
-    if config.get("TWILIO_TRIAL_MODE", False):
-        title, url = messages[0]
+    if config.get("TWILIO_TRIAL_MODE", True):
+        title, description, url = messages[0]
+        symbol = config.get("STOCK")
         short_url = shorten_url(url)
-        body = format_sms_message(title, short_url, pct_change)
+        body = format_sms_message(symbol, title, description, short_url, pct_change)
+    # TODO: this logic does not work for multiple messages
+    #   In production mode, send multiple SMS messages
     else:
         body_lines = [
             format_sms_message(title, shorten_url(url), pct_change)
             for title, url in messages
         ]
         body = "\n\n".join(body_lines)
-    
+        print(body)
+
+
+
     return {
         "to": config["MY_PHONE_NUMBER"],
         "from_": config["TWILIO_PHONE_NUMBER"],

@@ -57,7 +57,7 @@ DEFAULT_PAGE_SIZE = 3  # TODO: Make configurable via .env or external config fil
 
 # TODO: Refactor API config parameters into a dataclass (e.g., NewsAPIConfig)
 #       to improve readability, reduce parameter count, and support cleaner config management.
-def fetch_news_articles(api_endpoint: str, api_key: str, company_name: str, page_size: int = DEFAULT_PAGE_SIZE) -> List[Tuple[str, str]]:
+def fetch_news_articles(api_endpoint: str, api_key: str, company_name: str, page_size: int = DEFAULT_PAGE_SIZE) -> List[Tuple[str, str, str]]:
     """Fetch news articles related to the company.
     
     Args:
@@ -81,6 +81,9 @@ def fetch_news_articles(api_endpoint: str, api_key: str, company_name: str, page
         response.raise_for_status()
         
         articles = response.json().get("articles", [])
-        return [(a["title"], a["url"]) for a in articles if a.get("title") and a.get("url")]
+        return [(article["title"], article["description"], article["url"])
+                for article
+                in articles
+                if article.get("title") and article.get("description") and article.get("url")]
     except:
         return []

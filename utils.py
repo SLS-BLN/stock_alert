@@ -67,11 +67,13 @@ def shorten_url(url: str) -> str:
     except:
         return url
 
-def format_sms_message(title: str, url: str, pct_change: float) -> str:
+def format_sms_message(symbol: str, title: str, description: str, url: str, pct_change: float) -> str:
     """Format an SMS message with stock change information.
     
     Args:
+        symbol: Stock symbol
         title: Article title
+        description: Article description
         url: Article URL
         pct_change: Percentage change in stock price
         
@@ -79,5 +81,5 @@ def format_sms_message(title: str, url: str, pct_change: float) -> str:
         Formatted message string
     """
     triangle = "🟢▲" if pct_change > 0 else "🔴▼"
-    pct_text = f"{triangle} {abs(pct_change):.2f}%"
-    return f"{pct_text}\n{title} {url}"
+    pct_text = f"{symbol} {triangle} {abs(pct_change):.2f}%"
+    return f"{pct_text}\nHeadline: {title}\n Brief: {description} {url}"
