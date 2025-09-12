@@ -1,16 +1,34 @@
 import requests
-from typing import Tuple
+from typing import Dict, List, Tuple, Optional
+
+def extract_latest_prices(stock_data: Dict) -> Tuple[float, float]:
+    """Extract latest and previous day's closing prices.
+
+    Args:
+        stock_data: Stock data from Alpha Vantage API
+
+    Returns:
+        Tuple of (latest_price, previous_price)
+    """
+    time_series = stock_data["Time Series (Daily)"]
+    sorted_dates = sorted(time_series.keys(), reverse=True)
+
+    latest = float(time_series[sorted_dates[0]]["4. close"])
+    previous = float(time_series[sorted_dates[1]]["4. close"])
+
+    return latest, previous
+
 
 def calculate_percentage_change(latest: float, previous: float) -> float:
     """Calculate the percentage change between two values.
-    
+
     Args:
         latest: Latest value
         previous: Previous value
-        
+
     Returns:
         Percentage change as a float
-        
+
     Raises:
         ValueError: If previous value is zero
     """
@@ -20,11 +38,11 @@ def calculate_percentage_change(latest: float, previous: float) -> float:
 
 def is_threshold_reached(change: float, threshold: float) -> bool:
     """Check if the absolute change exceeds the threshold.
-    
+
     Args:
         change: Percentage change
         threshold: Threshold to check against
-        
+
     Returns:
         True if the absolute change exceeds the threshold, False otherwise
     """
@@ -32,11 +50,11 @@ def is_threshold_reached(change: float, threshold: float) -> bool:
 
 def evaluate_stock_change(stock_data: dict, threshold: float) -> Tuple[bool, float]:
     """Evaluate if stock change exceeds threshold.
-    
+
     Args:
         stock_data: Stock data containing daily prices
         threshold: Threshold percentage
-        
+
     Returns:
         Tuple of (threshold_reached, percentage_change)
     """
@@ -44,19 +62,19 @@ def evaluate_stock_change(stock_data: dict, threshold: float) -> Tuple[bool, flo
     # TODO: duplicated logic with data_fetch.py
     time_series = stock_data["Time Series (Daily)"]
     sorted_dates = sorted(time_series.keys(), reverse=True)
-    
+
     latest = float(time_series[sorted_dates[0]]["4. close"])
     previous = float(time_series[sorted_dates[1]]["4. close"])
-    
+
     pct_change = calculate_percentage_change(latest, previous)
     return is_threshold_reached(pct_change, threshold), pct_change
 
 def shorten_url(url: str) -> str:
     """Shorten a URL using TinyURL.
-    
+
     Args:
         url: URL to shorten
-        
+
     Returns:
         Shortened URL or original URL if shortening fails
     """
@@ -69,14 +87,14 @@ def shorten_url(url: str) -> str:
 
 def format_sms_message(symbol: str, title: str, description: str, url: str, pct_change: float) -> str:
     """Format an SMS message with stock change information.
-    
+
     Args:
         symbol: Stock symbol
         title: Article title
         description: Article description
         url: Article URL
         pct_change: Percentage change in stock price
-        
+
     Returns:
         Formatted message string
     """

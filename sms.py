@@ -8,12 +8,12 @@ def prepare_sms(
     pct_change: float
 ) -> Optional[Dict[str, str]]:
     """Prepare SMS message content.
-    
+
     Args:
         config: Application configuration
-        messages: List of (title, url) tuples
+        messages: List of (title, description, url) tuples
         pct_change: Percentage change in stock price
-        
+
     Returns:
         Dictionary with 'to', 'from_', and 'body' keys if successful, None otherwise
     """
@@ -21,20 +21,37 @@ def prepare_sms(
     if not messages:
         return None
 
-    # In trial mode, only send the first message
+    symbol = config.get("STOCK")
+
+    # In trial mode, only send the first message (max 160 chars)
     if config.get("TWILIO_TRIAL_MODE", True):
-        title, description, url = messages[0]
-        symbol = config.get("STOCK")
+        title, _, url = messages[0]  # Unpack all three values but ignore description
         short_url = shorten_url(url)
-        body = format_sms_message(symbol, title, description, short_url, pct_change)
-    # TODO: this logic does not work for multiple messages
-    #   In production mode, send multiple SMS messages
+        # Format without emojis and description to save space
+        change_direction = '+' if pct_change >= 0 else '-'
+        body = f"{symbol} {change_direction}{abs(pct_change):.1f}%\n{title}\n{short_url}"
+        # Ensure message is within 160 characters
+        if len(body) > 160:
+            # Truncate title if needed, leaving room for the rest
+            max_title_length = 160 - (len(symbol) + 10 + len(short_url) + 3)  # +3 for newlines and %
+            if max_title_length > 0:
+                title = title[:max_title_length - 3] + '...' if len(title) > max_title_length else title
+                body = f"{symbol} {change_direction}{abs(pct_change):.1f}%\n{title}\n{short_url}"
+    # In production mode, send all messages
     else:
-        body_lines = [
-            format_sms_message(title, shorten_url(url), pct_change)
-            for title, url in messages
-        ]
-        body = "\n\n".join(body_lines)
+        # Add header with symbol and percentage change
+        change_emoji = "🟢▲" if pct_change >= 0 else "🔴▼"
+        header = f"{symbol} {change_emoji} {abs(pct_change):.2f}%\n\n"
+
+        message_lines = []
+        for title, description, url in messages:
+            short_url = shorten_url(url)
+            # Format without symbol and pct_change since they're in the header
+            message = f"{title}\n{description}\n{short_url}"
+            message_lines.append(message)
+
+        # Combine header with all messages
+        body = header + "\n\n".join(message_lines)
         print(body)
 
 
@@ -47,24 +64,24 @@ def prepare_sms(
 
 def send_sms(account_sid: str, auth_token: str, sms_data: Dict[str, str]) -> bool:
     """Send an SMS message using Twilio.
-    
+
     Args:
         account_sid: Twilio account SID
         auth_token: Twilio auth token
         sms_data: Dictionary containing 'to', 'from_', and 'body' keys
-        
+
     Returns:
         True if message was sent successfully, False otherwise
     """
     try:
         client = Client(account_sid, auth_token)
-        
+
         message = client.messages.create(
             to=sms_data["to"],
             from_=sms_data["from_"],
             body=sms_data["body"]
         )
-        
+
         return message.status in ["sent", "queued", "delivered"]
     except Exception:
         return False

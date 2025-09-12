@@ -11,7 +11,7 @@ from sms import prepare_sms, send_sms
 
 def run_alert_pipeline(config: Dict[str, Any]) -> None:
     """Run the stock alert pipeline.
-    
+
     Args:
         config: Application configuration
     """
@@ -21,32 +21,32 @@ def run_alert_pipeline(config: Dict[str, Any]) -> None:
         config["ALPHAVANTAGE_API_KEY"],
         config["STOCK"]
     )
-    
+
     if not stock_data:
         print("❌ No stock data available.")
         return
-    
+
     # Check if price change exceeds threshold
     threshold = config["THRESHOLD"]
     alert_needed, pct_change = evaluate_stock_change(stock_data, threshold)
-    
+
     if not alert_needed:
         print(f"ℹ️  Threshold not reached: {abs(pct_change):.2f}% (threshold: {threshold}%)")
         return
-    
+
     print(f"📈 Significant price movement detected: {pct_change:+.2f}%")
-    
+
     # Fetch news articles
     messages = fetch_news_articles(
         config["NEWS_API_ENDPOINT"],
         config["NEWS_API_KEY"],
         config["COMPANY_NAME"]
     )
-    
+
     if not messages:
         print("ℹ️  No news articles found.")
         return
-    
+
     # Prepare and send SMS
     sms_data = prepare_sms(config, messages, pct_change)
     if sms_data and send_sms(config["TWILIO_ACCOUNT_SID"], config["TWILIO_AUTH_TOKEN"], sms_data):
