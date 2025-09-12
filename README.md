@@ -1,22 +1,27 @@
 # 📈 Stock Alert
 
-A Python application that monitors stock price changes and sends SMS alerts when thresholds are exceeded. This project was initially developed as part of a learning exercise and later refactored for better code quality and maintainability.
+A Python application that monitors stock price changes and sends SMS alerts when thresholds are exceeded. The application fetches stock data from Alpha Vantage and relevant news articles, then sends formatted alerts via Twilio.
 
-### ⚠️ Twilio SMS Delivery Limitation (Development Mode)
+### 🔄 Recent Updates
 
-**Note:** SMS messages may fail to send when using a Twilio **Trial account** due to strict character limits.
+- **Improved Error Handling**: Added specific exceptions and better error messages
+- **Code Organization**: Moved utility functions to `utils.py` for better separation of concerns
+- **SMS Formatting**: Enhanced message formatting with better handling of character limits
+- **Trial Mode Support**: Special handling for Twilio trial account limitations
+- **Clean Code**: Improved code structure and documentation
 
-- Trial accounts allow only **1 SMS segment** per message.
-- Messages with **Unicode symbols** (e.g., 📈, 🟢, ▲) are encoded differently, reducing the limit to **70 characters**.
-- Even without emojis, longer headlines or verbose content can exceed the **160-character GSM limit**.
+### ⚠️ Twilio Trial Mode Notice
 
-This behavior is **intentional during development** to preserve formatting and test full message structure. In production, with a paid Twilio account, these limits are relaxed and multi-segment messages are supported.
+In trial mode, the application will:
+- Send only the first news article
+- Format messages to fit within 160 characters
+- Include basic stock movement information
+- Automatically shorten URLs
 
-To debug delivery issues, check the Twilio **Error Logs**:
-> **Twilio Console → Account Dashboard → Monitor → Errors → Error Logs**  
-> Look for error code: **30044 – Trial Message Length Exceeded**
-
-You can also shorten messages or remove emojis to stay within trial limits if needed.
+For production use with a paid Twilio account, the application supports:
+- Multiple news articles per alert
+- Full message formatting with emojis
+- Detailed stock information
 
 
 ## 📜 Development History
@@ -27,12 +32,14 @@ You can also shorten messages or remove emojis to stay within trial limits if ne
 
 ## 🚀 Features
 
-- Fetches real-time stock data from Alpha Vantage API
-- Evaluates percentage change against a configurable threshold
-- Sends SMS alerts via Twilio
-- Retrieves relevant news articles
-- Simple configuration using `.env` file
-- Clean, modular code structure
+- **Stock Monitoring**: Fetches real-time stock data from Alpha Vantage API
+- **Smart Alerts**: Evaluates percentage change against a configurable threshold
+- **News Integration**: Retrieves relevant news articles for context
+- **SMS Notifications**: Sends formatted alerts via Twilio
+- **Trial Mode Support**: Special handling for Twilio trial account limitations
+- **Error Handling**: Comprehensive error handling and logging
+- **Configuration**: Simple setup using `.env` file
+- **Modular Design**: Clean, maintainable code structure
 
 ## 🧱 Project Structure
 
@@ -44,7 +51,8 @@ You can also shorten messages or remove emojis to stay within trial limits if ne
 ├── utils.py           # Utility functions and calculations
 ├── main.py            # Main application entry point
 ├── .env               # Configuration (not committed)
-└── requirements.txt   # Project dependencies
+├── requirements.txt   # Project dependencies
+└── HOW_IT_WORKS.md    # Detailed explanation of the application flow
 ```
 
 ## ⚙️ Setup
