@@ -16,10 +16,6 @@ def run_alert_pipeline(config: Dict[str, Any]) -> None:
 
     Args:
         config: Application configuration
-        
-    TODO: Add retry mechanism for API calls with exponential backoff
-    TODO: Add input validation for config parameters
-    TODO: Consider making this function async for better performance with I/O operations
     """
     # Fetch stock data
     stock_data = fetch_stock_data(
