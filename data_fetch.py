@@ -12,6 +12,10 @@ def fetch_stock_data(api_endpoint: str, api_key: str, symbol: str) -> Optional[D
 
     Returns:
         Stock data if successful, None otherwise
+
+    TODO: Add support for different timeframes (weekly, monthly)
+    TODO: Implement data validation and sanitization for symbol
+    TODO: Add request timeout and retry logic
     """
     params = {
         "function": "TIME_SERIES_DAILY",
@@ -47,6 +51,7 @@ def fetch_news_articles(api_endpoint: str, api_key: str, company_name: str, page
         api_endpoint: News API endpoint
         api_key: News API key
         company_name: Company name to search for
+        page_size: Number of articles to return
 
     Returns:
         List of (title, url) tuples

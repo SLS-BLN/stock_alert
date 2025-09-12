@@ -1,6 +1,8 @@
 import sys
 from typing import Dict, Any
 
+# TODO: Add proper logging setup instead of print statements
+# TODO: Consider using a configuration management library like Pydantic for better type safety
 from config import load_config
 from data_fetch import fetch_stock_data, fetch_news_articles
 from utils import evaluate_stock_change
@@ -14,6 +16,10 @@ def run_alert_pipeline(config: Dict[str, Any]) -> None:
 
     Args:
         config: Application configuration
+        
+    TODO: Add retry mechanism for API calls with exponential backoff
+    TODO: Add input validation for config parameters
+    TODO: Consider making this function async for better performance with I/O operations
     """
     # Fetch stock data
     stock_data = fetch_stock_data(

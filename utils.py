@@ -31,6 +31,9 @@ def calculate_percentage_change(latest: float, previous: float) -> float:
 
     Raises:
         ValueError: If previous value is zero
+
+    TODO: Add support for Decimal to avoid floating-point precision issues
+    TODO: Add option to return formatted string (e.g., '+5.2%')
     """
     if previous == 0:
         raise ValueError("Previous close cannot be zero.")
@@ -59,7 +62,6 @@ def evaluate_stock_change(stock_data: dict, threshold: float) -> Tuple[bool, flo
         Tuple of (threshold_reached, percentage_change)
     """
 
-    # TODO: duplicated logic with data_fetch.py
     time_series = stock_data["Time Series (Daily)"]
     sorted_dates = sorted(time_series.keys(), reverse=True)
 
